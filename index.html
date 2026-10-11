@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘의 발표자 뽑기</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SweetAlert2 CSS & JS -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    * { font-family: 'Pretendard', sans-serif; }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+    }
+
+    .number-badge {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .number-badge:hover {
+      transform: translateY(-5px) scale(1.05);
+    }
+
+    @keyframes popUp {
+      0% { transform: scale(0.5); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop { animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+  <!-- Main Container -->
+  <div class="glass-card shadow-2xl rounded-3xl p-6 sm:p-10 max-w-lg w-full border border-slate-200/60 text-center relative overflow-hidden">
+    
+    <!-- Top Decorative Badge -->
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-semibold mb-4">
+      <i class="fa-solid fa-microphone-lines"></i>
+      <span>두근두근 랜덤 발표자 추첨</span>
+    </div>
+
+    <!-- Header -->
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight mb-2">
+      🎤 오늘의 발표자
+    </h1>
+    <p class="text-sm text-slate-500 mb-8">1번부터 30번 중 멋진 발표자 5명을 뽑습니다.</p>
+
+    <!-- Action Button -->
+    <button onclick="handleDraw()" class="btn btn-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl w-full py-3.5 shadow-lg shadow-indigo-200 transition-all active:scale-95 flex items-center justify-center gap-2 border-0">
+      <i class="fa-solid fa-bullhorn text-lg"></i>
+      <span>발표자 추첨하기</span>
+    </button>
+
+    <!-- Result Display Section -->
+    <div class="mt-8 pt-6 border-t border-slate-100">
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">선정된 발표자</span>
+        <span id="drawTime" class="text-xs text-slate-400 hidden"></span>
+      </div>
+
+      <!-- Result Cards Grid -->
+      <div id="resultContainer" class="flex flex-wrap justify-center gap-3 min-h-[72px] items-center">
+        <p class="text-slate-400 text-sm font-medium py-4">버튼을 눌러 발표자를 선정해주세요!</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function handleDraw() {
+      // 1 ~ 30 배열 생성
+      const numbers = Array.from({ length: 30 }, (_, i) => i + 1);
+
+      // 피셔-예이츠 셔플
+      for (let i = numbers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+      }
+
+      // 5명 선택 및 오름차순 정렬
+      const selected = numbers.slice(0, 5).sort((a, b) => a - b);
+
+      // SweetAlert2 알림 연출
+      Swal.fire({
+        title: '🎉 발표자 선정 완료!',
+        html: `
+          <div class="my-4">
+            <p class="text-slate-600 text-sm mb-4">오늘의 멋진 발표자 5명입니다!</p>
+            <div class="flex justify-center gap-2 flex-wrap">
+              ${selected.map(num => `
+                <span class="inline-block bg-indigo-600 text-white font-black text-lg px-3.5 py-2 rounded-xl shadow-md">
+                  ${num}번
+                </span>
+              `).join('')}
+            </div>
+          </div>
+        `,
+        icon: 'success',
+        confirmButtonText: '확인 및 순서 보기',
+        confirmButtonColor: '#4F46E5',
+        customClass: {
+          popup: 'rounded-3xl',
+          confirmButton: 'rounded-xl font-bold px-5 py-2.5'
+        }
+      }).then(() => {
+        // 팝업 닫힌 후 메인 화면 업데이트
+        renderResults(selected);
+      });
+    }
+
+    function renderResults(selected) {
+      const container = document.getElementById('resultContainer');
+      const timeSpan = document.getElementById('drawTime');
+      
+      container.innerHTML = '';
+
+      selected.forEach((num, index) => {
+        const badge = document.createElement('div');
+        badge.className = `number-badge bg-indigo-50 border-2 border-indigo-500/30 text-indigo-700 font-extrabold text-lg w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm animate-pop`;
+        badge.style.animationDelay = `${index * 0.08}s`;
+        badge.innerHTML = `${num}<span class="text-xs font-semibold">번</span>`;
+        container.appendChild(badge);
+      });
+
+      // 추첨 시간 기록
+      const now = new Date();
+      timeSpan.textContent = `선정 시간: ${now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+      timeSpan.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
